@@ -1,0 +1,18 @@
+{
+  "name": "patrikbacko-plugins",
+  "owner": {
+    "name": "Patrik Backo"
+  },
+  "description": "Claude Code plugins by Patrik Backo",
+  "plugins": [
+    {
+      "name": "agentic-whiteboard",
+      "source": "./",
+      "description": "Maintains a versioned interactive whiteboard beside Claude Code conversations",
+      "version": "0.1.0",
+      "author": {
+        "name": "Patrik Backo"
+      }
+    }
+  ]
+}

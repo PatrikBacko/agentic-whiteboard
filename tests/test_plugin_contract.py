@@ -17,6 +17,18 @@ class PluginContractTests(unittest.TestCase):
         self.assertEqual(manifest["version"], "0.1.0")
         self.assertIn("whiteboard", manifest["description"].lower())
 
+    def test_marketplace_catalog_supports_gui_installation(self) -> None:
+        marketplace = json.loads(
+            (self.repo / ".claude-plugin/marketplace.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(marketplace["name"], "patrikbacko-plugins")
+        entries = marketplace["plugins"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["name"], "agentic-whiteboard")
+        self.assertEqual(entries[0]["source"], "./")
+
     def test_hooks_register_prompt_and_stop_lifecycle(self) -> None:
         hooks = json.loads(
             (self.repo / "hooks/hooks.json").read_text(encoding="utf-8")

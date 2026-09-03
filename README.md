@@ -50,6 +50,22 @@ Each finalized revision records its source prompt ID, title, summary, update tim
 
 ## Install and use with Claude Code
 
+### VS Code extension or Claude Code desktop app
+
+The repository is also a Claude plugin marketplace, so no `--plugin-dir` launch flag is needed:
+
+1. **VS Code:** type `/plugins` in the Claude Code prompt, then open **Marketplaces** and add `PatrikBacko/agentic-whiteboard`.
+2. **Claude Code desktop:** in a local or SSH project session, click the **+** beside the prompt, choose **Plugins → Add plugin**, and install **Agentic Whiteboard** from the configured `patrikbacko-plugins` marketplace.
+3. In VS Code, open the **Plugins** tab and install **Agentic Whiteboard** from `patrikbacko-plugins`.
+4. Restart/reload Claude Code when prompted.
+5. Open a trusted local project and confirm `/agentic-whiteboard:whiteboard-status` appears in `/help`.
+
+The desktop plugin browser displays plugins from marketplaces already configured for Claude Code. If the custom marketplace does not yet appear there, add it once through the VS Code `/plugins` marketplace screen, then reopen the desktop app.
+
+The desktop integration is intended for a local **Claude Code** project session. Regular Claude Chat and remote/cloud sessions do not provide the local project filesystem used by `.whiteboard/`.
+
+### Local development installation
+
 Requirements:
 
 - Python 3.10+

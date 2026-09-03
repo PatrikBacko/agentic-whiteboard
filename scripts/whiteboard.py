@@ -187,7 +187,7 @@ def _bootstrap(paths: SessionPaths) -> None:
     _safe_mkdir(paths.current, paths.session_dir)
     _safe_mkdir(paths.versions, paths.session_dir)
     _assert_regular(paths.lock, allow_missing=True)
-    _validate_protocol_tree(paths.whiteboard_root)
+    _validate_protocol_tree(paths.session_dir)
 
 
 @contextlib.contextmanager
