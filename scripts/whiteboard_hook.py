@@ -106,6 +106,20 @@ def handle_prompt(payload: dict[str, Any], plugin_root: Path) -> dict[str, Any]:
         f"node {react_builder} --source {react_source} --output {react_output} "
         "--title '<artifact title>'"
     )
+    react_dependencies = (
+        plugin_root / "node_modules" / "esbuild",
+        plugin_root / "node_modules" / "react",
+        plugin_root / "node_modules" / "react-dom",
+    )
+    if all(dependency.is_dir() for dependency in react_dependencies):
+        react_instruction = (
+            "For React, write `current/App.jsx`, then run: " + build_react
+        )
+    else:
+        react_instruction = (
+            "React bundler dependencies are unavailable in this plugin installation; "
+            "use plain HTML/CSS/JS for this revision."
+        )
     context = f"""Maintain the visual companion for this turn after completing the user's core task and before your final response.
 
 Current artifact: {paths.current_html.relative_to(root)}
@@ -115,7 +129,7 @@ Prompt id: {effective_prompt}
 Workflow:
 1. Read the current manifest and HTML so spatial structure and useful context remain stable.
 2. Run: {prepare}
-3. Update current/index.html as a self-contained interactive web app. Plain HTML/CSS/JS is valid. For React, write `current/App.jsx`, then run: {build_react}
+3. Update current/index.html as a self-contained interactive web app. Plain HTML/CSS/JS is valid. {react_instruction}
    Mark at most 15 meaningful top-level objects with unique `id` and `data-whiteboard-element` attributes. Do not include remote scripts, styles, images, fonts, fetches, or analytics.
 4. Preserve user-authored or still-relevant elements; remove, merge, or de-emphasize stale ones. Visualize state, relationships, decisions, evidence, progress, blockers, and next steps rather than copying the transcript.
 5. Run: {finalize}

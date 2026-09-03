@@ -64,6 +64,8 @@ The desktop plugin browser displays plugins from marketplaces already configured
 
 The desktop integration is intended for a local **Claude Code** project session. Regular Claude Chat and remote/cloud sessions do not provide the local project filesystem used by `.whiteboard/`.
 
+Marketplace installs work immediately with self-contained HTML/CSS/JavaScript. Claude automatically falls back to that path when the optional local React bundler dependencies are not present.
+
 ### Local development installation
 
 Requirements:

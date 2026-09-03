@@ -382,6 +382,24 @@ class HookTests(unittest.TestCase):
             ).exists()
         )
 
+    def test_prompt_hook_falls_back_to_plain_html_without_bundler_dependencies(self) -> None:
+        with tempfile.TemporaryDirectory() as plugin_directory:
+            result = whiteboard_hook.handle_prompt(
+                {
+                    "session_id": "marketplace-session",
+                    "prompt_id": "prompt-1",
+                    "cwd": str(self.root),
+                    "prompt": "Visualize this",
+                    "hook_event_name": "UserPromptSubmit",
+                },
+                Path(plugin_directory),
+            )
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("React bundler dependencies are unavailable", context)
+        self.assertIn("plain HTML", context)
+        self.assertNotIn("node ", context)
+
     def test_prompt_hook_prefers_claude_project_root_over_changed_cwd(self) -> None:
         nested = self.root / "packages" / "app"
         nested.mkdir(parents=True)
