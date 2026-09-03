@@ -1,0 +1,27 @@
+{
+  "description": "Create a pending visual revision for each prompt and remind Claude once before stopping if it was not finalized.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/whiteboard_hook.py\" prompt",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/whiteboard_hook.py\" stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

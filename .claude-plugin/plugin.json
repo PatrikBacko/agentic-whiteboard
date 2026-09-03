@@ -1,0 +1,11 @@
+{
+  "name": "agentic-whiteboard",
+  "version": "0.1.0",
+  "description": "Maintains a versioned interactive whiteboard beside Claude Code conversations.",
+  "author": {
+    "name": "Patrik Backo"
+  },
+  "homepage": "https://github.com/PatrikBacko/agentic-whiteboard",
+  "repository": "https://github.com/PatrikBacko/agentic-whiteboard",
+  "license": "MIT"
+}

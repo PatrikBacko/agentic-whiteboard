@@ -1,0 +1,19 @@
+{
+  "name": "agentic-whiteboard-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Versioned visual companion plugin for coding-agent conversations",
+  "type": "module",
+  "scripts": {
+    "test": "python3 -m unittest discover -s tests -v",
+    "check": "npm test && claude plugin validate ."
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "esbuild": "0.25.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}

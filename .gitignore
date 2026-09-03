@@ -1,22 +1,16 @@
 # Dependencies
 node_modules/
-.next/
-out/
-dist/
-coverage/
-playwright-report/
-test-results/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Generated target-repository state
+.whiteboard/
 
 # Local data and environment
 .env
 .env.local
-*.db
-*.db-shm
-*.db-wal
-data/
-
-# Generated artifacts
-.artifacts/
 
 # Editors and OS
 .DS_Store

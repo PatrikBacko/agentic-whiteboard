@@ -1,143 +1,211 @@
 # Agentic Whiteboard
 
-> Chat gives AI a voice. Agentic Whiteboard gives it a visual workspace.
+> A versioned visual companion plugin for Claude Code conversations, with portable instructions for Codex.
 
-Agentic Whiteboard is an experimental conversational interface where an AI can answer with normal text **and** create persistent, interactive web artifacts on a shared board.
-
-Instead of explaining every result as another long message, the AI can generate the representation that fits the task:
-
-- a decision matrix with adjustable priorities;
-- an architecture explorer;
-- a timeline or implementation plan;
-- an interactive simulation;
-- an evidence map;
-- a custom dashboard or calculator;
-- or a small interface nobody designed in advance.
-
-The user can interact with the artifact, refer to it in later messages, and ask the AI to revise it. The browser becomes the AI's second communication medium.
-
-## The product idea
+Agentic Whiteboard does **not** replace Claude Code, Codex, their CLI, IDE extension, or conversation storage. It teaches the coding agent to maintain an additional visual artifact after each meaningful turn.
 
 ```text
-Traditional AI chat
-User ↔ chronological text stream
-
-Agentic Whiteboard
-User ↔ chat + persistent interactive artifacts
+normal coding-agent conversation
+          │
+          ├── code, tools, tests, final text answer
+          │
+          └── versioned visual companion
+              .whiteboard/sessions/<conversation-id>/
 ```
 
-The board is capped at **15 top-level elements**. This forces the AI to curate, replace, group, and summarize instead of filling an infinite canvas with noise. A top-level element may be a simple note—or an entire generated React mini-app.
+The companion is a self-contained static web app. The agent can use plain HTML/CSS/JavaScript or generate a React component and bundle it into one offline `index.html`. It can visualize architecture, progress, decisions, alternatives, evidence, blockers, and next steps in whatever interactive form fits the work.
 
-## MVP promise
+## How it works
 
-A user describes a complex problem. The AI responds in text and generates an interactive React artifact beside the conversation. The user manipulates it, continues the conversation with that artifact as context, and asks the AI to revise it without losing the previous version.
+For Claude Code, the plugin combines a skill with two lifecycle hooks:
 
-### Hero demo
+1. `UserPromptSubmit` creates a pending visual revision and injects the exact session-specific paths and commands.
+2. Claude performs the user's normal task.
+3. Claude reads the existing whiteboard and archives its previous revision.
+4. Claude updates the static web artifact, preserving useful visual continuity.
+5. Claude finalizes the revision before answering.
+6. `Stop` reminds Claude once if it forgot, without creating an infinite loop.
 
-1. Ask: “Compare three architectures for this product and let me change how much I value cost, speed, and isolation.”
-2. The AI explains its recommendation in chat.
-3. It creates a React comparison app with sliders, scores, trade-offs, and expandable evidence.
-4. The user changes the weights and selects an option.
-5. Ask: “Turn the selected option into a four-week implementation plan.”
-6. The AI creates a second interactive artifact while preserving the first.
+Claude Code remains the agent and conversation interface. The plugin is only instructions, hooks, version-management helpers, a React bundler, and a tiny local viewer.
 
-## MVP scope
-
-### Included
-
-- one local single-user workspace;
-- multiple persistent conversations;
-- text chat with a configurable AI provider;
-- AI-generated React artifacts;
-- artifact cards on a draggable/resizable board;
-- maximum 15 top-level board elements;
-- sandboxed iframe execution;
-- expand and open-artifact views;
-- artifact IDs included in conversation context;
-- version history for generated source;
-- retry, revise, restore, delete, and undo;
-- local SQLite persistence;
-- a visible activity/error state while an artifact is generated or compiled.
-
-### Explicitly excluded
-
-- multiplayer collaboration;
-- arbitrary npm package installation;
-- generated artifact network access;
-- autonomous privileged actions;
-- mobile-grade canvas editing;
-- polished infinite-canvas diagram tooling;
-- production authentication, billing, or cloud deployment;
-- agent-generated backend services.
-
-## Proposed architecture
+## Result inside a target repository
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ Trusted host application                                    │
-│                                                             │
-│  Chat ──► AI turn ──► text response + artifact proposal     │
-│                                  │                          │
-│                                  ▼                          │
-│                         React source compiler               │
-│                                  │                          │
-│                                  ▼                          │
-│  SQLite ◄── versions/state ── sandboxed iframe on board     │
-└─────────────────────────────────────────────────────────────┘
+.whiteboard/
+├── active.json
+└── sessions/
+    └── <claude-session-id>/
+        ├── current/
+        │   ├── index.html
+        │   ├── manifest.json
+        │   └── App.jsx             # optional React source
+        ├── versions/
+        │   ├── 000001/
+        │   └── 000002/
+        ├── history.jsonl
+        └── pending.json            # only while a turn is unfinished
 ```
 
-Generated React is treated as an expressive but untrusted artifact:
+Each finalized revision records its source prompt ID, title, summary, update time, content digest, and stable visual element IDs. Archived revisions are digest-verified, tamper-evident, and made read-only as defense in depth; they are not cryptographically immutable against the workspace owner.
 
-- it receives only explicit serializable inputs;
-- it runs with scripts enabled but without same-origin privileges;
-- it cannot read host cookies, storage, tokens, or DOM;
-- it has no network access in the MVP;
-- it can emit a small set of typed events through `postMessage`;
-- the trusted host validates and persists supported state changes;
-- a broken artifact can be stopped and restored independently.
+## Install and use with Claude Code
 
-## Initial technical direction
+Requirements:
 
-- TypeScript
-- Next.js + React
-- SQLite + Drizzle ORM
-- a server-side React/TSX compilation step using a fixed dependency allowlist
-- sandboxed iframe artifact runtime
-- Zod schemas for model output and host/artifact messages
-- Vitest for domain and protocol tests
-- Playwright for the complete generation → render → interact → revise flow
+- Python 3.10+
+- Node.js 20+ only when generated React artifacts are desired
+- Claude Code with plugin support
 
-The exact AI model/provider should remain configurable. The MVP should depend on structured output and tool calling, not one vendor-specific model.
+Clone and install the fixed React bundler dependencies:
 
-## Product principles
+```bash
+git clone https://github.com/PatrikBacko/agentic-whiteboard.git
+cd agentic-whiteboard
+npm install
+```
 
-1. **Visual output must add structure, not decorate text.**
-2. **Generated React is first-class.** The agent may invent task-specific interaction rather than only compose predefined widgets.
-3. **Generated code is untrusted.** Freedom of expression does not imply access to credentials or privileged APIs.
-4. **The user owns the board.** User edits, locks, deletion, and version restoration are authoritative.
-5. **Artifacts persist beyond one message.** They are addressable objects, not disposable previews.
-6. **Keep the board small.** Fifteen meaningful objects are better than an unlimited visual transcript.
-7. **Failure is local.** A broken generated app must not crash the conversation or other artifacts.
-8. **Every artifact has a text fallback.** Important conclusions remain understandable without executing generated code.
+Validate the plugin:
 
-## Success criteria for the prototype
+```bash
+claude plugin validate .
+```
 
-The MVP is successful if a tester can complete the hero demo and:
+Start Claude Code inside any target project:
 
-- the generated app renders without modifying host state directly;
-- interaction state survives conversation turns;
-- the AI can correctly refer to the selected artifact and its current state;
-- revision creates a new restorable version;
-- malformed or looping artifact code fails locally and recoverably;
-- the board enforces its 15-element limit;
-- the result feels clearer than receiving the same information as prose alone.
+```bash
+cd /path/to/your-project
+claude --plugin-dir /absolute/path/to/agentic-whiteboard
+```
 
-## Plan
+Then talk to Claude normally. No API keys, provider integration, database, or separate chat application are required by this plugin.
 
-The implementation plan is in:
+The plugin hooks work wherever Claude Code supports its standard lifecycle hooks, including the CLI and IDE-hosted Claude Code sessions. The target workspace must be trusted because hooks execute local commands.
 
-[`/.hermes/plans/2026-09-03_073952-agentic-whiteboard-mvp.md`](.hermes/plans/2026-09-03_073952-agentic-whiteboard-mvp.md)
+## View the whiteboard
 
-## Status
+Read the active session:
 
-Concept and MVP planning only. No application code has been implemented yet.
+```bash
+python3 -c 'import json; print(json.load(open(".whiteboard/active.json"))["session_id"])'
+```
+
+Serve the latest artifact:
+
+```bash
+python3 /absolute/path/to/agentic-whiteboard/scripts/whiteboard.py serve \
+  --root "$PWD" --session '<session-id>' --open
+```
+
+Serve an archived revision:
+
+```bash
+python3 /absolute/path/to/agentic-whiteboard/scripts/whiteboard.py serve \
+  --root "$PWD" --session '<session-id>' --revision 1 --open
+```
+
+Claude also exposes the plugin command `/agentic-whiteboard:whiteboard-status`.
+
+## React artifacts
+
+The agent may directly generate `current/index.html`, which is usually sufficient. When a richer React interface is useful, it writes `current/App.jsx` and runs:
+
+```bash
+node /absolute/path/to/agentic-whiteboard/scripts/build-react.mjs \
+  --source .whiteboard/sessions/<session-id>/current/App.jsx \
+  --output .whiteboard/sessions/<session-id>/current/index.html \
+  --title 'Current work'
+```
+
+The bundler:
+
+- permits React and its fixed runtime only;
+- rejects arbitrary package imports;
+- resolves its exact pinned React/esbuild runtime from the plugin, independent of the target working directory;
+- requires regular, non-symlink source/output paths in one canonical artifact directory;
+- embeds the application and React runtime into one HTML file;
+- adds an offline content-security policy with `connect-src 'none'`;
+- rejects source larger than 200 KB or output larger than 1 MB.
+
+Static HTML checks reject referenced files plus common remote URL and networking forms, but are necessarily best-effort rather than a JavaScript sandbox. The local viewer applies CSP as runtime enforcement and serves only `index.html`; directly opening the file bypasses viewer response headers and is appropriate only for trusted generated content.
+
+## Whiteboard rules
+
+- Maximum **15 meaningful top-level elements**.
+- Every top-level element uses a unique stable ID and `data-whiteboard-element`.
+- Internal DOM complexity is unrestricted.
+- Preserve useful elements and approximate spatial layout between revisions.
+- Update, merge, or remove stale information instead of appending forever.
+- Do not copy the conversation into decorative cards.
+- No remote scripts, styles, images, fonts, analytics, or API calls.
+- The user's actual task always has priority over the visualization.
+
+## Codex integration
+
+Codex reads `AGENTS.md` instructions but does not use the Claude plugin hooks. Copy or merge:
+
+```text
+integrations/codex/AGENTS.md
+```
+
+into the target repository and configure:
+
+```bash
+export AGENTIC_WHITEBOARD_PLUGIN=/absolute/path/to/agentic-whiteboard
+export WHITEBOARD_SESSION_ID=codex-default
+```
+
+The instructions give Codex explicit `prompt → prepare → edit/build → finalize` commands. Use a distinct `WHITEBOARD_SESSION_ID` for each conversation.
+
+A fallback `CLAUDE.md` snippet is also available at `integrations/claude/CLAUDE.md` when plugin loading is unavailable.
+
+## Development and verification
+
+```bash
+npm install
+npm test
+claude plugin validate .
+```
+
+The test suite exercises:
+
+- session isolation and safe IDs;
+- prompt markers without storing raw prompt text;
+- archive-before-edit with digest verification and read-only snapshots;
+- idempotent preparation;
+- 15-element validation and stable unique IDs;
+- rejection of remote artifact dependencies;
+- Claude prompt and Stop hook behavior;
+- hook execution from outside the plugin directory;
+- React bundling and package-import rejection;
+- selection of archived revisions for viewing;
+- plugin manifest and integration contracts.
+
+## Current MVP limitations
+
+- Codex integration is instruction-driven because it has no equivalent plugin hook in this MVP.
+- The viewer serves one selected session/revision; it is not a visual history browser yet.
+- The plugin reminds Claude once rather than blocking forever if finalization repeatedly fails.
+- Interactive state inside a generated page is not synchronized back into the conversation automatically.
+- The React allowlist intentionally contains no charting or UI libraries.
+- `.whiteboard/` is local working state by default; add it to the target project's ignore rules if it should not be committed.
+- A hostile workspace owner can replace files and locks, and filesystem power-loss durability varies; protection against owner-level mutation and fully durable multi-file transactions are post-MVP limits.
+- Static offline checks are best-effort. Use the CSP-enforcing local viewer for untrusted rendering; direct file opening assumes the generated artifact is trusted.
+
+## Repository layout
+
+```text
+.claude-plugin/plugin.json        Claude Code plugin manifest
+hooks/hooks.json                  prompt and Stop lifecycle hooks
+skills/whiteboard/SKILL.md        agent behavior and visual protocol
+commands/whiteboard-status.md     inspection command
+scripts/whiteboard_hook.py        Claude hook adapter
+scripts/whiteboard.py             lifecycle, validation, history, viewer
+scripts/build-react.mjs           fixed offline React bundler
+integrations/codex/AGENTS.md      portable Codex instructions
+integrations/claude/CLAUDE.md     non-plugin Claude fallback
+tests/                            standard-library integration tests
+```
+
+## License
+
+MIT
